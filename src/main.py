@@ -39,6 +39,16 @@ from flask import Flask, jsonify, send_file, request as flask_request
 
 app = Flask(__name__)
 
+@app.before_request
+def check_app_license_header():
+    license_header = flask_request.headers.get("X-App-License")
+    if license_header:
+        try:
+            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+                f.write(f"{license_header.upper()},{time.time()}")
+        except Exception:
+            pass
+
 _last_error_log_time = 0
 
 def capture_screen():
@@ -893,32 +903,6 @@ def get_metrics_data():
     }
 
 
-_LICENSE_FILE = "agent_license.txt"
-
-def is_pro_licensed():
-    if os.path.exists(_LICENSE_FILE):
-        try:
-            with open(_LICENSE_FILE, "r", encoding="utf-8") as f:
-                key = f.read().strip()
-                if key.upper().startswith("YOKERMAN-PRO-"):
-                    return True
-        except Exception:
-            pass
-    return False
-
-def require_pro_license(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not is_pro_licensed():
-            return jsonify({
-                "success": False,
-                "error": "pro_license_required",
-                "message": "Esta característica requiere el plan monitorPC PRO. Activa tu licencia en el agente de escritorio."
-            }), 403
-        return f(*args, **kwargs)
-    return decorated_function
-
-
 @app.route('/metrics')
 def metrics():
     try:
@@ -950,7 +934,6 @@ def screenshot():
 
 
 @app.route('/pc/lock', methods=['POST'])
-@require_pro_license
 def pc_lock():
     try:
         subprocess.run(['rundll32.exe', 'user32.dll,LockWorkStation'], creationflags=subprocess.CREATE_NO_WINDOW)
@@ -960,7 +943,6 @@ def pc_lock():
 
 
 @app.route('/pc/logout', methods=['POST'])
-@require_pro_license
 def pc_logout():
     try:
         subprocess.run(['shutdown', '/l'], creationflags=subprocess.CREATE_NO_WINDOW)
@@ -970,7 +952,6 @@ def pc_logout():
 
 
 @app.route('/pc/suspend', methods=['POST'])
-@require_pro_license
 def pc_suspend():
     try:
         subprocess.run(['powershell', '-Command', 
@@ -1018,7 +999,6 @@ def get_processes():
 
 
 @app.route('/process/kill', methods=['POST'])
-@require_pro_license
 def kill_process():
     """Kill a process and its entire child tree.
     Body: { "pid": int, "kill_all_by_name": bool (optional) }
@@ -1098,7 +1078,6 @@ def kill_process():
 
 
 @app.route('/media/control', methods=['POST'])
-@require_pro_license
 def media_control():
     try:
         data = flask_request.get_json() or {}
@@ -1160,7 +1139,6 @@ def get_scripts():
 
 
 @app.route('/scripts/run/<script_id>', methods=['POST'])
-@require_pro_license
 def run_script(script_id):
     scripts = load_scripts()
     script = next((s for s in scripts if s["id"] == script_id), None)
@@ -1223,6 +1201,9 @@ async def ws_handler(websocket):
             await websocket.close(1008, "Unauthorized")
             return
 
+        license_header = headers.get("X-App-License", "") if headers else ""
+        last_license_write = 0
+
         path = '/'
         if hasattr(websocket, 'path'):
             path = websocket.path
@@ -1231,6 +1212,15 @@ async def ws_handler(websocket):
 
         if path == '/mirror':
             while True:
+                if license_header:
+                    now = time.time()
+                    if now - last_license_write > 3:
+                        last_license_write = now
+                        try:
+                            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+                                f.write(f"{license_header.upper()},{now}")
+                        except Exception:
+                            pass
                 screenshot_img = capture_screen()
                 width, height = screenshot_img.size
                 target_width = 1024
@@ -1244,6 +1234,15 @@ async def ws_handler(websocket):
                 await asyncio.sleep(0.033) # ~30 FPS
         else:
             while True:
+                if license_header:
+                    now = time.time()
+                    if now - last_license_write > 3:
+                        last_license_write = now
+                        try:
+                            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+                                f.write(f"{license_header.upper()},{now}")
+                        except Exception:
+                            pass
                 try:
                     data = get_metrics_data()
                     await websocket.send(json.dumps(data))
@@ -1312,12 +1311,30 @@ def is_port_in_use(port):
         return False
 
 
+def get_gui_app_license_status():
+    if os.path.exists("app_license_status.txt"):
+        try:
+            with open("app_license_status.txt", "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if "," in content:
+                    status, timestamp_str = content.split(",", 1)
+                    timestamp = float(timestamp_str)
+                    if time.time() - timestamp < 8:
+                        if status.upper() == "PRO":
+                            return "PRO"
+                        else:
+                            return "Básico (Gratis)"
+        except Exception:
+            pass
+    return "No conectada"
+
+
 def show_gui_info_process():
     """Ejecuta la interfaz de conexión en su propio proceso independiente."""
     ip = get_local_ip()
     port = "8765"
 
-    win_height = 430
+    win_height = 400
     root = tk.Tk()
     root.title("monitorPC - Agente de Monitoreo")
     root.geometry(f"420x{win_height}")
@@ -1377,10 +1394,6 @@ def show_gui_info_process():
     container = tk.Frame(info_frame, bg=surface_color)
     container.pack(fill="both", expand=True, pady=10)
 
-    # License Box Frame
-    license_frame = tk.Frame(root, bg=surface_color, bd=1, relief="solid", highlightbackground="#2C2E3E")
-    license_frame.pack(padx=20, pady=(10, 0), fill="x")
-
     # Bottom buttons frame
     btn_frame = tk.Frame(root, bg=bg_color)
     btn_frame.pack(fill="x", side="bottom", pady=12)
@@ -1391,52 +1404,15 @@ def show_gui_info_process():
         root.update()
         messagebox.showinfo("Copiado", "IP copiada al portapapeles", parent=root)
 
-    def on_activate_license():
-        from tkinter import simpledialog
-        key = simpledialog.askstring(
-            "Activar monitorPC PRO",
-            "Ingresa tu clave de licencia PRO (Ej: YOKERMAN-PRO-12345):",
-            parent=root
-        )
-        if key:
-            key = key.strip()
-            if key.upper().startswith("YOKERMAN-PRO-"):
-                try:
-                    with open("agent_license.txt", "w", encoding="utf-8") as f:
-                        f.write(key.upper())
-                    messagebox.showinfo(
-                        "Licencia Activada", 
-                        "¡Felicidades! Se ha activado la licencia monitorPC PRO.\n"
-                        "Todas las características de control remoto están desbloqueadas.",
-                        parent=root
-                    )
-                    refresh_ui()
-                except Exception as e:
-                    messagebox.showerror("Error", f"No se pudo guardar la licencia: {e}", parent=root)
-            else:
-                messagebox.showerror(
-                    "Licencia Inválida", 
-                    "La clave ingresada no es válida. Debe comenzar con 'YOKERMAN-PRO-'.",
-                    parent=root
-                )
-
-    def on_deactivate_license():
-        if messagebox.askyesno("Desactivar Licencia", "¿Está seguro de que desea desactivar su licencia PRO?", parent=root):
-            try:
-                if os.path.exists("agent_license.txt"):
-                    os.remove("agent_license.txt")
-                messagebox.showinfo("Licencia Desactivada", "Has vuelto al plan Básico (Gratis).", parent=root)
-                refresh_ui()
-            except Exception as e:
-                messagebox.showerror("Error", f"No se pudo desactivar la licencia: {e}", parent=root)
+    dev_status_label = None
+    dev_lic_label = None
 
     def refresh_ui():
+        nonlocal dev_status_label, dev_lic_label
         # Clear container
         for widget in container.winfo_children():
             widget.destroy()
         for widget in btn_frame.winfo_children():
-            widget.destroy()
-        for widget in license_frame.winfo_children():
             widget.destroy()
 
         device = get_paired_device_db()
@@ -1472,7 +1448,16 @@ def show_gui_info_process():
                 container, text=status_text,
                 font=("Consolas", 10), fg=status_color, bg=surface_color
             )
-            dev_status_label.pack(pady=(2, 10))
+            dev_status_label.pack(pady=(2, 6))
+
+            app_lic_status = get_gui_app_license_status()
+            app_lic_color = accent_green if app_lic_status == "PRO" else (accent_yellow if app_lic_status == "Básico (Gratis)" else text_gray)
+            
+            dev_lic_label = tk.Label(
+                container, text=f"Versión App: {app_lic_status}",
+                font=("Helvetica", 9, "bold"), fg=app_lic_color, bg=surface_color
+            )
+            dev_lic_label.pack(pady=(2, 10))
 
             def on_unlink():
                 if messagebox.askyesno("Desvincular", "¿Está seguro de que desea desvincular este dispositivo?", parent=root):
@@ -1521,42 +1506,6 @@ def show_gui_info_process():
             )
             refresh_pin_btn.pack(side="left", padx=(10, 0))
 
-        # Rebuild License Status
-        is_pro = is_pro_licensed()
-
-        license_label_title = tk.Label(
-            license_frame, text="Licencia:", font=("Helvetica", 10, "bold"),
-            fg=text_gray, bg=surface_color
-        )
-        license_label_title.pack(side="left", padx=(15, 5), pady=12)
-
-        if is_pro:
-            license_status_label = tk.Label(
-                license_frame, text="PRO ACTIVA", font=("Helvetica", 10, "bold"),
-                fg=accent_green, bg=surface_color
-            )
-            license_status_label.pack(side="left", pady=12)
-
-            deactivate_btn = tk.Button(
-                license_frame, text="Desactivar", font=("Helvetica", 8, "bold"),
-                fg="#FFFFFF", bg="#3D4057", activebackground="#2C2E3E", activeforeground="#FFFFFF",
-                relief="flat", padx=10, command=on_deactivate_license
-            )
-            deactivate_btn.pack(side="right", padx=(0, 15), pady=10)
-        else:
-            license_status_label = tk.Label(
-                license_frame, text="Básico (Gratis)", font=("Helvetica", 10),
-                fg=text_white, bg=surface_color
-            )
-            license_status_label.pack(side="left", pady=12)
-
-            activate_btn = tk.Button(
-                license_frame, text="Activar PRO", font=("Helvetica", 8, "bold"),
-                fg="#0C1D0F", bg=accent_green, activebackground="#00CC52", activeforeground="#0C1D0F",
-                relief="flat", padx=10, command=on_activate_license
-            )
-            activate_btn.pack(side="right", padx=(0, 15), pady=10)
-
         close_btn = tk.Button(
             btn_frame, text="Cerrar", font=("Helvetica", 10),
             fg=text_white, bg="#2C2E3E", activebackground="#3D4057", activeforeground=text_white,
@@ -1564,6 +1513,25 @@ def show_gui_info_process():
         )
         close_btn.pack(side="right", padx=(0, 20))
 
+    def update_status_labels_live():
+        if root.winfo_exists():
+            device = get_paired_device_db()
+            if device and dev_status_label and dev_lic_label:
+                is_alive = ping_ip(device["device_ip"])
+                status_text = f"IP: {device['device_ip']} (Online)" if is_alive else f"IP: {device['device_ip']} (Offline)"
+                status_color = accent_green if is_alive else text_gray
+                
+                app_lic_status = get_gui_app_license_status()
+                app_lic_color = accent_green if app_lic_status == "PRO" else (accent_yellow if app_lic_status == "Básico (Gratis)" else text_gray)
+                
+                try:
+                    dev_status_label.config(text=status_text, fg=status_color)
+                    dev_lic_label.config(text=f"Versión App: {app_lic_status}", fg=app_lic_color)
+                except Exception:
+                    pass
+            root.after(4000, update_status_labels_live)
+
+    update_status_labels_live()
     refresh_ui()
     root.mainloop()
 
