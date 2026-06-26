@@ -14,6 +14,16 @@ import traceback
 import time
 import asyncio
 
+def get_persistent_path(filename):
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, filename)
+
+_ERROR_LOG_FILE = get_persistent_path("agent_error.log")
+_LICENSE_STATUS_FILE = get_persistent_path("app_license_status.txt")
+
 def hide_console():
     import ctypes
     if sys.platform == "win32":
@@ -29,7 +39,7 @@ try:
     import tkinter as tk
     from tkinter import messagebox
 except Exception as e:
-    with open("agent_error.log", "w", encoding="utf-8") as f:
+    with open(_ERROR_LOG_FILE, "w", encoding="utf-8") as f:
         f.write("Error al importar modulos requeridos:\n")
         traceback.print_exc(file=f)
     raise e
@@ -44,7 +54,7 @@ def check_app_license_header():
     license_header = flask_request.headers.get("X-App-License")
     if license_header:
         try:
-            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+            with open(_LICENSE_STATUS_FILE, "w", encoding="utf-8") as f:
                 f.write(f"{license_header.upper()},{time.time()}")
         except Exception:
             pass
@@ -68,7 +78,7 @@ def capture_screen():
             if now - _last_error_log_time > 10:
                 _last_error_log_time = now
                 try:
-                    with open("agent_error.log", "a", encoding="utf-8") as f:
+                    with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
                         f.write(f"Screen capture failed: mss error: {e}, PIL error: {e2}\n")
                 except Exception:
                     pass
@@ -86,7 +96,7 @@ def capture_screen():
 AGENT_VERSION = "2.1.0"
 
 # ─── Database and Pairing Configuration ──────────────────────────────────────
-_DB_FILE = "agent.db"
+_DB_FILE = get_persistent_path("agent.db")
 _linked_device_status = "No vinculado"
 _linked_device_name = None
 _linked_device_ip = None
@@ -109,7 +119,7 @@ def init_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Error al inicializar la base de datos: {e}\n")
 
 def get_paired_device_db():
@@ -187,7 +197,7 @@ def unlink_device_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Error al desvincular dispositivo en BD: {e}\n")
     _load_or_create_api_key(force_new=True)
     _linked_device_name = None
@@ -251,8 +261,8 @@ def get_rtss_fps():
 
 
 # ─── API Key Authentication ──────────────────────────────────────────────────
-_API_KEY_FILE = "agent_apikey.txt"
-_PAIRING_FILE = "agent_pairing.txt"
+_API_KEY_FILE = get_persistent_path("agent_apikey.txt")
+_PAIRING_FILE = get_persistent_path("agent_pairing.txt")
 _API_KEY = None
 
 def _load_or_create_api_key(force_new=False):
@@ -368,7 +378,7 @@ def pair_endpoint():
         conn.commit()
         conn.close()
     except Exception as e:
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Error al guardar vinculación en BD: {e}\n")
 
     # Valid PIN: return the full API Key
@@ -908,7 +918,7 @@ def metrics():
     try:
         return jsonify(get_metrics_data())
     except Exception as e:
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Error in HTTP /metrics route: {e}\n")
             import traceback
             traceback.print_exc(file=f)
@@ -1108,7 +1118,7 @@ def media_control():
 
 
 def load_scripts():
-    scripts_file = "scripts.json"
+    scripts_file = get_persistent_path("scripts.json")
     if not os.path.exists(scripts_file):
         default_scripts = [
             {"id": "lock", "name": "Bloquear PC", "command": "rundll32.exe user32.dll,LockWorkStation"},
@@ -1182,7 +1192,7 @@ def start_zeroconf():
         _zeroconf_instance.register_service(info)
         _zeroconf_info = info
     except Exception as e:
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Error starting Zeroconf: {e}\n")
 
 
@@ -1217,7 +1227,7 @@ async def ws_handler(websocket):
                     if now - last_license_write > 3:
                         last_license_write = now
                         try:
-                            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+                            with open(_LICENSE_STATUS_FILE, "w", encoding="utf-8") as f:
                                 f.write(f"{license_header.upper()},{now}")
                         except Exception:
                             pass
@@ -1239,7 +1249,7 @@ async def ws_handler(websocket):
                     if now - last_license_write > 3:
                         last_license_write = now
                         try:
-                            with open("app_license_status.txt", "w", encoding="utf-8") as f:
+                            with open(_LICENSE_STATUS_FILE, "w", encoding="utf-8") as f:
                                 f.write(f"{license_header.upper()},{now}")
                         except Exception:
                             pass
@@ -1247,7 +1257,7 @@ async def ws_handler(websocket):
                     data = get_metrics_data()
                     await websocket.send(json.dumps(data))
                 except Exception as e_inner:
-                    with open("agent_error.log", "a", encoding="utf-8") as f:
+                    with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
                         f.write(f"Error gathering metrics in WS loop: {e_inner}\n")
                         import traceback
                         traceback.print_exc(file=f)
@@ -1258,7 +1268,7 @@ async def ws_handler(websocket):
         import traceback
         print("EXCEPTION IN WS_HANDLER:")
         traceback.print_exc()
-        with open("agent_error.log", "a", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"Exception in ws_handler: {e}\n")
             traceback.print_exc(file=f)
 
@@ -1274,7 +1284,7 @@ def start_websocket_server():
         try:
             asyncio.run(ws_main())
         except Exception as e:
-            with open("agent_error.log", "a", encoding="utf-8") as f:
+            with open(_ERROR_LOG_FILE, "a", encoding="utf-8") as f:
                 f.write(f"Error in WebSocket server: {e}\n")
 
     ws_thread = threading.Thread(target=run_loop, daemon=True)
@@ -1312,9 +1322,9 @@ def is_port_in_use(port):
 
 
 def get_gui_app_license_status():
-    if os.path.exists("app_license_status.txt"):
+    if os.path.exists(_LICENSE_STATUS_FILE):
         try:
-            with open("app_license_status.txt", "r", encoding="utf-8") as f:
+            with open(_LICENSE_STATUS_FILE, "r", encoding="utf-8") as f:
                 content = f.read().strip()
                 if "," in content:
                     status, timestamp_str = content.split(",", 1)
@@ -1710,6 +1720,6 @@ if __name__ == '__main__':
         tray_icon.run(setup=on_setup)
         
     except Exception as e:
-        with open("agent_error.log", "w", encoding="utf-8") as f:
+        with open(_ERROR_LOG_FILE, "w", encoding="utf-8") as f:
             f.write("Ocurrió un error al iniciar el agente:\n")
             traceback.print_exc(file=f)
