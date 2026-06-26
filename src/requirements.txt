@@ -1,0 +1,6 @@
+flask
+psutil
+pillow
+zeroconf
+websockets
+mss

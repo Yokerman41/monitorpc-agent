@@ -1,0 +1,9 @@
+build/
+dist/
+__pycache__/
+*.pyc
+*.db
+agent_apikey.txt
+agent_pairing.txt
+agent_error.log
+agent_out.log

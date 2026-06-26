@@ -1,0 +1,1 @@
+# Kellevo Monitor Agent\n\nGET /metrics devuelve métricas básicas.
