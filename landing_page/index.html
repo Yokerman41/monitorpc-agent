@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>monitorPC | Monitor de Hardware en Tiempo Real</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <i class="fa-solid fa-microchip logo-icon"></i>
+                <span>monitor<span>PC</span></span>
+            </a>
+            <nav>
+                <a href="#features">Características</a>
+                <a href="#how-it-works">Cómo Funciona</a>
+                <a href="#pricing">Precios</a>
+                <a href="#download" class="btn-secondary">Descargar Agente</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-glow-1"></div>
+        <div class="hero-glow-2"></div>
+        <div class="hero-content">
+            <div class="badge">PROYECTO YOKERMAN</div>
+            <h1>Tu PC en tu Bolsillo.<br><span>Monitoreo en Tiempo Real.</span></h1>
+            <p>Controla la temperatura de tu GPU, el uso de CPU, la memoria RAM, velocidades de red y más, directamente desde tu teléfono móvil. Sin configuraciones complicadas.</p>
+            <div class="hero-ctas">
+                <a href="#download" class="btn-primary">
+                    <i class="fa-brands fa-windows"></i> Descargar Agente
+                </a>
+                <a href="#pricing" class="btn-secondary">
+                    Ver Planes Pro
+                </a>
+            </div>
+        </div>
+        <div class="hero-preview">
+            <div class="preview-card glass">
+                <div class="card-header">
+                    <span class="dot red"></span>
+                    <span class="dot yellow"></span>
+                    <span class="dot green"></span>
+                    <span class="window-title">monitorPC Dashboard</span>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <i class="fa-solid fa-processor icon-cpu"></i>
+                        <h4>CPU Usage</h4>
+                        <div class="metric-value">42%</div>
+                        <div class="progress-bar"><span style="width: 42%"></span></div>
+                    </div>
+                    <div class="metric-box">
+                        <i class="fa-solid fa-temperature-high icon-temp"></i>
+                        <h4>GPU Temp</h4>
+                        <div class="metric-value">68°C</div>
+                        <div class="progress-bar"><span style="width: 68%; background: #ff4757;"></span></div>
+                    </div>
+                    <div class="metric-box">
+                        <i class="fa-solid fa-memory icon-ram"></i>
+                        <h4>RAM Free</h4>
+                        <div class="metric-value">5.2 GB</div>
+                        <div class="progress-bar"><span style="width: 32%"></span></div>
+                    </div>
+                    <div class="metric-box">
+                        <i class="fa-solid fa-hard-drive icon-disk"></i>
+                        <h4>SSD Space</h4>
+                        <div class="metric-value">120 GB</div>
+                        <div class="progress-bar"><span style="width: 85%; background: #ffa502;"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-title">
+            <h2>Todo el control que necesitas</h2>
+            <p>Métricas precisas al instante, con impacto cero en el rendimiento de tu PC.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card glass">
+                <i class="fa-solid fa-gauge-high card-icon green-icon"></i>
+                <h3>Baja Latencia</h3>
+                <p>Transmisión casi instantánea de datos utilizando sockets locales. Reacción al segundo.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fa-solid fa-chart-line card-icon blue-icon"></i>
+                <h3>Estadísticas Detalladas</h3>
+                <p>Monitorea carga de procesador, temperaturas de núcleos, frecuencias de reloj, velocidades de ventiladores y uso de memoria.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fa-solid fa-desktop card-icon purple-icon"></i>
+                <h3>Captura de Pantalla</h3>
+                <p>Revisa visualmente lo que está haciendo tu PC con la función de captura remota directa a tu teléfono.</p>
+            </div>
+            <div class="feature-card glass">
+                <i class="fa-solid fa-bolt card-icon gold-icon"></i>
+                <h3>Impacto Mínimo</h3>
+                <p>El agente de escritorio consume menos del 1% de tu CPU y pocos megabytes de RAM. Corre silenciosamente en tu barra de tareas.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="section-title">
+            <h2>Monitoreo en 3 Simples Pasos</h2>
+            <p>Configuración rápida, sin necesidad de conocimientos técnicos.</p>
+        </div>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <h3>Instala el Agente</h3>
+                <p>Descarga nuestro instalador optimizado para Windows y ejecútalo. Se iniciará en segundo plano.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <h3>Descarga la App Móvil</h3>
+                <p>Instala la aplicación compañera en tu celular desde Google Play Store o Apple App Store.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <h3>Vincula y Monitorea</h3>
+                <p>Conecta el teléfono escaneando la red local o ingresando el código de emparejamiento. ¡Listo!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing (Freemium Table) Section -->
+    <section id="pricing" class="pricing">
+        <div class="section-title">
+            <h2>Elige tu Plan</h2>
+            <p>Monitoreo local gratis para siempre, o expande tus capacidades con las funciones Pro.</p>
+        </div>
+        <div class="pricing-container">
+            <!-- Free Plan -->
+            <div class="price-card glass">
+                <h3>Plan Básico</h3>
+                <div class="price">Gratis</div>
+                <p class="price-desc">Ideal para monitoreo rápido en casa</p>
+                <ul>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Conexión en Red Local (LAN)</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Estadísticas de CPU, RAM y GPU</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Monitoreo de Discos y Red</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Monitorear 1 Computadora</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark text-red"></i> Monitoreo en la Nube (Remoto)</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark text-red"></i> Alertas y Notificaciones Push</li>
+                    <li class="disabled"><i class="fa-solid fa-circle-xmark text-red"></i> Acciones Remotas (Apagar/Reiniciar)</li>
+                </ul>
+                <a href="#download" class="btn-secondary">Comenzar Gratis</a>
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="price-card glass premium">
+                <div class="popular-tag">RECOMENDADO</div>
+                <h3>Plan PRO</h3>
+                <div class="price">$1.99<span>/mes</span></div>
+                <p class="price-desc">Control total en cualquier lugar del mundo</p>
+                <ul>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Todo lo del Plan Básico</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Conexión Remota en la Nube</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Monitoreo de PCs Ilimitadas</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Notificaciones Push por alta temperatura</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Apagado, Reinicio y Suspensión Remota</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Acceso a terminal remota integrada</li>
+                    <li><i class="fa-solid fa-circle-check text-green"></i> Soporte Prioritario 24/7</li>
+                </ul>
+                <a href="#" class="btn-primary">Obtener Plan PRO</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download-section">
+        <div class="download-container glass">
+            <h2>¿Listo para empezar?</h2>
+            <p>Descarga la última versión del instalador transparente y certificado para Windows de forma directa.</p>
+            <div class="download-buttons">
+                <a href="https://github.com/Yokerman41/monitorpc-agent/releases/download/v1.0.0/Instalador-monitorPC-Agent.exe" class="btn-primary">
+                    <i class="fa-brands fa-windows"></i> Descargar Agente (.EXE)
+                </a>
+            </div>
+            <div class="app-stores">
+                <h4>Consigue la App Móvil:</h4>
+                <div class="stores-badges">
+                    <a href="#" class="store-badge"><i class="fa-brands fa-google-play"></i> Google Play</a>
+                    <a href="#" class="store-badge"><i class="fa-brands fa-apple"></i> App Store</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <p>&copy; 2026 Yokerman. Todos los derechos reservados. monitorPC Agent es software seguro y auditado.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
